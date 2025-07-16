@@ -1,6 +1,6 @@
 # F1 Info display on 2.9" 3 color E-Paper
 
-Formula 1 info screen, based on esp32 and **2.9 3 color E-Paper module from weact studio**.  
+Formula 1 info screen, based on esp32 and **2.9"  3 color E-Paper module from weact studio**.  
 Data is fetched from **ergast** API and displayed on the screen every 30 minutes.  
 
 **WiFi AP:**  
