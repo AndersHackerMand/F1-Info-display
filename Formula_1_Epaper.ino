@@ -3,7 +3,7 @@
 Formula 1 API to fetch info about drivers points, constructor points, 
 last race with podium and next race
 
-
+Damian Mazur 2025
 */
 
 #include <WiFi.h>
@@ -15,9 +15,12 @@ last race with podium and next race
 #include <GxEPD2_BW.h>
 #include <GxEPD2_3C.h>
 #include <U8g2_for_Adafruit_GFX.h>
+#include <WiFiManager.h>
 
-const char* ssid = "mazur-network";
-const char* password = "4YJAETJHLGE";
+#define AP_SSID "F1 display"
+#define AP_PASS "formula1"
+bool wifiConnected = false;
+IPAddress ip;
 
 String API_BASE;
 String API_RACES;
@@ -27,7 +30,7 @@ String API_CONSTR_STAND;
 
 #define SCREEN_WIDTH 296
 #define SCREEN_HEIGHT 128
-#define listx 220
+#define listx 225
 #define logoWidth 80
 #define logoHeight 20
 
@@ -84,7 +87,9 @@ struct tm timeinfo;
 String dateStr, dateStr2, timeStr;
 String abbrev0, abbrev1, abbrev2;
 String fam0, fam1, fam2;
+//#########################################################################################
 
+void configModeCallback(WiFiManager* myWiFiManager) {}
 //#########################################################################################
 // cut first 3 letters from names.
 String utf8_substr(const String& s, int codepoints) {
@@ -116,12 +121,45 @@ void setup() {
   display.drawBitmap(SCREEN_WIDTH / 2 - logoWidth / 2, 50, F1_Logo, logoWidth, logoHeight, GxEPD_RED);
   drawString(50, 74, "Lights out and away we go!", LEFT);
 
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting Wi‑Fi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(300);
-    Serial.print('.');
+// Initialize WiFiManager
+  WiFiManager wifiManager;
+  wifiManager.setAPCallback(configModeCallback);
+  wifiManager.setCustomHeadElement(
+    "<style>"
+    "body { background: linear-gradient(135deg, #bdb7b7, #000); color: #E0E0E0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }"
+    "h1, h2, h3, h4, h5, h6 { color: #4CAF50; }"
+    ".container { background: rgba(30, 30, 30, 0.9); padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); max-width: 400px; width: 100%; }"
+    "button { border-radius: 25px; padding: 12px 25px; margin: 8px 5px; background: linear-gradient(45deg, #007BFF, #00C4FF); color: #FFFFFF; font-size: 1.1em; font-weight: bold; border: none; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }"
+    "button:hover { background: linear-gradient(45deg, #0056b3, #0099CC); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); }"
+    "input[type=\"text\"], input[type=\"password\"] { width: calc(100% - 20px); padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #555; background: #333; color: #EEE; font-size: 1em; }"
+    "select { background: #333; color: #EEE; border-radius: 8px; padding: 10px; font-size: 1em; border: 1px solid #555; }" /* Styles for the select box itself */
+    "option { background-color: #444; color: #FFF; }"                                                                      /* Styles for individual options in the dropdown */
+    "div#footer, .msg { display: none !important; }"
+    "</style>"
+    "<script>"
+    "window.addEventListener('load', function() {"
+    "let buttons = document.querySelectorAll('button');"
+    "buttons.forEach(btn => {"
+    "if (btn.textContent.includes('Info') || btn.textContent.includes('Update') || btn.textContent.includes('Exit')) {"
+    "btn.style.display = 'none';"
+    "}"
+    "});"
+    "let custom = document.createElement('div');"
+    "custom.innerHTML = '<p style=\"margin-top:20px; color:#4CAF50; font-size:1em;\">📶 Please connect to your WiFi</p>';"
+    "document.body.appendChild(custom);"
+    "});"
+    "</script>");
+
+  wifiManager.setTitle("Formula 1 Screen");
+
+  if (!wifiManager.autoConnect(AP_SSID, AP_PASS)) {
+    //Serial.println("Failed to connect and hit timeout");
+    ESP.restart();
   }
+
+  wifiConnected = true;
+  ip = WiFi.localIP();
+
   configTzTime(MY_TZ, "pool.ntp.org", "time.nist.gov");
   while (!getLocalTime(&timeinfo)) {
     delay(1000);
@@ -157,7 +195,7 @@ void loop() {
     }
 
     display.display();
-    RefreshTime();  
+    RefreshTime();  //10 minutes between updates
   }
 }
 //#########################################################################################
