@@ -1,3 +1,8 @@
+## License
+
+This project is released under the [GNU GPL v3.0](LICENSE).  
+© 2025 Mazur. No warranty; use at your own risk.
+
 # F1 Info display on 2.9" 3 color E-Paper
   
   
@@ -18,14 +23,12 @@ Top 10 drivers, including season points,
 Last race location including podium places,  
 Next race location and date,   
 Pole position for next race.  
-
-**Libraries used:**  
-GxEPD2 (1.6.4) by ZinggJM -  https://github.com/ZinggJM/GxEPD2  
-U8g2_for_Adafruit_GFX (1.8.0) by olikraus - https://github.com/olikraus/U8g2_for_Adafruit_GFX  
-WiFiManager (2.0.17) by tzapu - https://github.com/tzapu/WiFiManager  
-ArduinoJson (7.4.2) by Benoit Blanchon - https://arduinojson.org/?utm_source=meta&utm_medium=library.properties  
-
-
+  
+## Third‑Party Libraries  
+- **GxEPD2** (v1.6.4) by ZinggJM — GPL 3.0  
+- **U8g2_for_Adafruit_GFX** (v1.8.0) by olikraus — BSD 2‑Clause  
+- **WiFiManager** (v2.0.17) by tzapu — MIT  
+- **ArduinoJson** (v7.4.2) by Benoit Blanchon — MIT  
 
 **Arduino IDE 2.3.6 with esp32 3.2.1**  
 
