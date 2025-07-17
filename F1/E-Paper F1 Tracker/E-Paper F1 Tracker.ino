@@ -1,11 +1,44 @@
 /*
+#####################################################################
 
-Formula 1 API to fetch info about drivers points, constructor points, 
-last race with podium and next race
+      Copyright (C) 2025 Mazur888
 
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-Damian Mazur 2025
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  ####################################################################
+  
+For this project I used  Arduino IDE 2.3.6 with esp32 3.2.1
+
+Screeen ISP Connections:
+BUSY = 4
+CS = 5
+RST = 16
+DC = 17
+SCK = 18
+MISO = 19
+MOSI = 23
+
+Time zone is set to BST time in UK.
+more timezones here:
+MET-1METDST,M3.5.0/01,M10.5.0/02 //Europe
+CET-1CEST,M3.5.0,M10.5.0/3 // Central Europe
+EST-2METDST,M3.5.0/01,M10.5.0/02 // Europe
+EST5EDT,M3.2.0,M11.1.0 // EST USA
+CST6CDT,M3.2.0,M11.1.0 // CST USA
+MST7MDT,M4.1.0,M10.5.0 // MST USA
+NZST-12NZDT,M9.5.0,M4.1.0/3 // Auckland
+EET-2EEST,M3.5.5/0,M10.5.5/0 // Asia
+ACST-9:30ACDT,M10.1.0,M4.1.0/3 // Australia
 */
 
 #include <WiFi.h>
@@ -19,7 +52,7 @@ Damian Mazur 2025
 #include <U8g2_for_Adafruit_GFX.h>  // https://github.com/olikraus/U8g2_for_Adafruit_GFX
 #include <WiFiManager.h>            // https://github.com/tzapu/WiFiManager
 
-#define AP_SSID "F1 display"
+#define AP_SSID "F1 tracker"
 #define AP_PASS "formula1"
 bool wifiConnected = false;
 IPAddress ip;
@@ -40,15 +73,15 @@ enum alignmentType { LEFT,
                      RIGHT,
                      CENTER };
 
-static const uint8_t EPD_BUSY = 4;   // to EPD BUSY
-static const uint8_t EPD_CS = 5;     // to EPD CS
-static const uint8_t EPD_RST = 16;   // to EPD RST
-static const uint8_t EPD_DC = 17;    // to EPD DC
-static const uint8_t EPD_SCK = 18;   // to EPD CLK
-static const uint8_t EPD_MISO = 19;  // Master-In Slave-Out not used, as no data from display
-static const uint8_t EPD_MOSI = 23;  // to EPD DIN
+static const uint8_t EPDBUSY = 4;   // BUSY
+static const uint8_t EPDCS = 5;     // CS
+static const uint8_t EPDRST = 16;   // RST
+static const uint8_t EPDDC = 17;    // DC
+static const uint8_t EPDSCK = 18;   // CLK
+static const uint8_t EPDMISO = 19;  // Not used with this display
+static const uint8_t EPDMOSI = 23;  // DIN
 
-GxEPD2_3C<GxEPD2_290_C90c, GxEPD2_290_C90c::HEIGHT> display(GxEPD2_290_C90c(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY));  // GDEM029C90 128xlistx, SSD1680
+GxEPD2_3C<GxEPD2_290_C90c, GxEPD2_290_C90c::HEIGHT> display(GxEPD2_290_C90c(EPDCS, EPDDC, EPDRST, EPDBUSY));  // GDEM029C90, SSD1680
 
 U8G2_FOR_ADAFRUIT_GFX gfx;
 
@@ -57,7 +90,7 @@ StaticJsonDocument<32 * 1024> doc;
 
 //#########################################################################################
 
-// 80x20-pixel logo, monochrome
+// 80x20-pixel F1 logo
 const uint8_t F1_Logo[] PROGMEM = {
   0x00, 0x00, 0x00, 0x7f, 0xff, 0xff, 0xff, 0xff, 0x8f, 0xfe, 0x00, 0x00, 0x07, 0xff, 0xff, 0xff,
   0xff, 0xff, 0x1f, 0xfc, 0x00, 0x00, 0x1f, 0xff, 0xff, 0xff, 0xff, 0xfe, 0x3f, 0xf8, 0x00, 0x00,
@@ -75,13 +108,16 @@ const uint8_t F1_Logo[] PROGMEM = {
 };
 //#########################################################################################
 
-// stats
 unsigned lastRound = 0, nextRound = 0;
 String lastDate, lastName, lastCircuit, lastLoc;
 String nextDate, nextName, nextCircuit, nextLoc;
+String lastGP, nextGP;
 //#########################################################################################
 
-#define MY_TZ "GMT0BST,M3.5.0/1,M10.5.0/2"
+#define MY_TZ "GMT0BST,M3.5.0/1,M10.5.0/2"  // Change time zone if you are outside UK
+#define NTP1 "pool.ntp.org"
+#define NTP2 "time.nist.gov"
+
 time_t now;
 struct tm timeinfo;
 
@@ -90,7 +126,8 @@ String abbrev0, abbrev1, abbrev2;
 String fam0, fam1, fam2;
 //#########################################################################################
 
-void configModeCallback(WiFiManager* myWiFiManager) {}
+void configModeCallback(WiFiManager* myWiFiManager) {
+}
 //#########################################################################################
 
 // Only display first 3 letters of each last name (needs done this way because of Hulkenbergs umlaut)
@@ -116,16 +153,16 @@ String utf8_substr(const String& s, int codepoints) {
 void setup() {
   Serial.begin(115200);
 
-  // Initialise Screen
+  // Screen Init
   SPI.begin();
   display.init();
   display.setRotation(3);
   gfx.begin(display);
   gfx.setFontMode(1);
-  gfx.setFontDirection(0);              // left to right (default)
-  gfx.setForegroundColor(GxEPD_BLACK);  // Adafruit GFX color
-  gfx.setBackgroundColor(GxEPD_WHITE);  // Adafruit GFX color
-  gfx.setFont(u8g2_font_helvB10_tf);    // more fonts here: https://github.com/olikraus/u8g2/wiki/fntlistall
+  gfx.setFontDirection(0);
+  gfx.setForegroundColor(GxEPD_BLACK);
+  gfx.setBackgroundColor(GxEPD_WHITE);
+  gfx.setFont(u8g2_font_helvB10_tf);  // more fonts here: https://github.com/olikraus/u8g2/wiki/fntlistall
   display.fillScreen(GxEPD_WHITE);
   display.setFullWindow();
 
@@ -139,14 +176,15 @@ void setup() {
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.setCustomHeadElement(
     "<style>"
-    "body { background: linear-gradient(135deg, #bdb7b7, #000); color: #E0E0E0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }"
-    "h1, h2, h3, h4, h5, h6 { color: #4CAF50; }"
-    ".container { background: rgba(30, 30, 30, 0.9); padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); max-width: 400px; width: 100%; }"
-    "button { border-radius: 25px; padding: 12px 25px; margin: 8px 5px; background: linear-gradient(45deg, #007BFF, #00C4FF); color: #FFFFFF; font-size: 1.1em; font-weight: bold; border: none; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }"
-    "button:hover { background: linear-gradient(45deg, #0056b3, #0099CC); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); }"
-    "input[type=\"text\"], input[type=\"password\"] { width: calc(100% - 20px); padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #555; background: #333; color: #EEE; font-size: 1em; }"
-    "select { background: #333; color: #EEE; border-radius: 8px; padding: 10px; font-size: 1em; border: 1px solid #555; }" /* Styles for the select box itself */
-    "option { background-color: #444; color: #FFF; }"                                                                      /* Styles for individual options in the dropdown */
+    "body { background: repeating-linear-gradient(45deg, #819A91 0px, #D1D8BE 8px, #D1D8BE 8px, #EEEFE0 16px), linear-gradient(135deg, #DDDDDD, #E1EEBC); color: #F1F1F1; font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }"
+    "h1, h2, h3, h4, h5, h6 { color: #6e0907; text-transform: uppercase; letter-spacing: 1px; }"
+    ".container { background: rgba(0, 0, 0, 0.85); padding: 30px; border: 3px solid #E10600; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.7); max-width: 420px; width: 100%; }"
+    "input[type=\"text\"], input[type=\"password\"], select { width: calc(100% - 20px); padding: 12px; margin: 10px 0; border-radius: 4px; border: 2px solid #444; background: #111; color: #EEE; font-size: 1em; font-family: inherit; transition: border-color 0.2s; }"
+    "input[type=\"text\"]:focus, input[type=\"password\"]:focus, select:focus { border-color: #E10600; outline: none; }"
+    "option { background-color: #222; color: #FFF; }"
+    "button { display: inline-block; border-radius: 25px; padding: 14px 28px; margin: 10px 5px; background: linear-gradient(90deg, #E10600, #FF4F4F); color: #FFF; font-size: 1.1em; font-weight: bold; font-family: inherit; border: none; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 1px; }"
+    "button:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6); }"
+    "button:active { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6); }"
     "div#footer, .msg { display: none !important; }"
     "</style>"
     "<script>"
@@ -163,7 +201,7 @@ void setup() {
     "});"
     "</script>");
 
-  wifiManager.setTitle("Formula 1 Screen");
+  wifiManager.setTitle("Formula 1 Tracker");
 
   if (!wifiManager.autoConnect(AP_SSID, AP_PASS)) {
     ESP.restart();
@@ -172,7 +210,7 @@ void setup() {
   wifiConnected = true;
   ip = WiFi.localIP();
 
-  configTzTime(MY_TZ, "pool.ntp.org", "time.nist.gov");
+  configTzTime(MY_TZ, NTP1, NTP2);
   while (!getLocalTime(&timeinfo)) {
     delay(1000);
   }
@@ -241,7 +279,7 @@ void DrawTime() {
 
   gfx.setFont(u8g2_font_helvB08_tf);
   drawString(SCREEN_WIDTH / 2, 0, "Today: " + strDateUK, CENTER);
-  //  drawString(SCREEN_WIDTH / 2, 0, "Updated: " + timeStr + "  " + strDateUK, CENTER);
+  //  drawString(SCREEN_WIDTH / 2, 0, "Updated: " + timeStr + "  " + strDateUK, CENTER);  // Top header with time
   display.drawLine(0, 11, SCREEN_WIDTH, 11, GxEPD_RED);
 }
 //#########################################################################################
@@ -261,6 +299,7 @@ void FetchCalendar() {
       String date = race["date"].as<const char*>();
       unsigned rnd = race["round"].as<unsigned>();
       String circuit = race["Circuit"]["circuitName"].as<const char*>();
+      String GPname = race["raceName"].as<const char*>();
       String loc = String(race["Circuit"]["Location"]["locality"].as<const char*>())
                    + ", " + race["Circuit"]["Location"]["country"].as<const char*>();
 
@@ -271,6 +310,8 @@ void FetchCalendar() {
           lastName = race["raceName"].as<const char*>();
           lastCircuit = circuit;
           lastLoc = loc;
+          lastGP = GPname;
+          lastGP.replace("Grand Prix", "GP");
         }
       } else if (nextRound == 0) {
         nextRound = rnd;
@@ -278,6 +319,8 @@ void FetchCalendar() {
         nextName = race["raceName"].as<const char*>();
         nextCircuit = circuit;
         nextLoc = loc;
+        nextGP = GPname;
+        nextGP.replace("Grand Prix", "GP");
       }
     }
   }
@@ -293,7 +336,7 @@ void DrawLastRace() {
   if (lastRound == 0) {
     Serial.println("  (no past races yet)");
   } else {
-    Serial.printf("  Round %u — %s on %s at %s\n", lastRound, lastCircuit.c_str(), lastDate.c_str(), lastLoc.c_str());
+    Serial.printf("  Round %u — %s on %s at %s\n", lastRound, lastCircuit.c_str(), lastDate.c_str(), lastLoc.c_str(), lastGP.c_str());
 
     String iso = lastDate;
     int p1 = iso.indexOf('-');
@@ -304,8 +347,9 @@ void DrawLastRace() {
     String day = iso.substring(p2 + 1);        // dd
 
     String displayDate = day + "-" + month + "-" + year;
-    String lastInfo = lastLoc;
-    drawString(SCREEN_WIDTH / 2, 118, lastInfo, CENTER);  // Last race location
+    String lastInfo = lastGP;
+
+    drawString(SCREEN_WIDTH / 2, 118, lastInfo.c_str(), CENTER);  // Last race location
 
 
 
@@ -400,7 +444,7 @@ void DrawNextRace() {
   String day = iso.substring(p2 + 1);        // day
 
   String displayDate = day + "-" + month + "-" + year;  // dd-mm-yyyy
-  String nextInfo = "Next Race: " + nextLoc + ", " + displayDate;
+  String nextInfo = "Next: " + nextGP + ", " + displayDate;
 
   gfx.setForegroundColor(GxEPD_BLACK);
   gfx.setFont(u8g2_font_helvB08_tf);
@@ -422,7 +466,6 @@ void DrawDrivers() {
     for (int i = 0; i < 10 && i < ds.size(); i++) {
       JsonObject d = ds[i];
 
-      // --- extract raw fields ---
       String pos = String(d["position"].as<const char*>());
       String full = String(d["Driver"]["familyName"].as<const char*>());
       String pts = String(d["points"].as<const char*>());
@@ -444,7 +487,6 @@ void DrawDrivers() {
       drawString(223, 13, "Top 10 Drivers", LEFT);
       gfx.setForegroundColor(GxEPD_BLACK);
 
-      // just to make list better and more symetrical
       drawString(listx, 24, driverLine[0].c_str(), LEFT);
       drawString(listx, 34, driverLine[1].c_str(), LEFT);
       drawString(listx, 44, driverLine[2].c_str(), LEFT);
@@ -473,7 +515,6 @@ void DrawDrivers() {
 
 void RefreshTime() {
   Serial.println("\n(Updating 30  minutes…)\n");
-  //delay(10UL * 60UL * 1000UL);  // 10 mins
   delay(30UL * 60UL * 1000UL);  // 30 mins
 }
 //#########################################################################################
@@ -519,17 +560,16 @@ void DrawConstructors() {
 }
 //#########################################################################################
 
-void drawString(int x, int y, String text, alignmentType alignment) {
-  int16_t x1, y1;  //the bounds of x,y and w and h of the variable 'text' in pixels.
+void drawString(int x, int y, String str, alignmentType alignment) {
+  int16_t x1, y1;
   uint16_t w, h;
   display.setTextWrap(false);
-  display.getTextBounds(text, x, y, &x1, &y1, &w, &h);
+  display.getTextBounds(str, x, y, &x1, &y1, &w, &h);
   if (alignment == RIGHT) x = x - w;
   if (alignment == CENTER) x = x - w / 2;
   gfx.setCursor(x, y + h);
   display.setTextColor(GxEPD_RED);
-
-  gfx.print(text);
+  gfx.print(str);
 }
 //#########################################################################################
 
@@ -552,6 +592,3 @@ bool httpGetJson(const char* url) {
   return true;
 }
 //#########################################################################################
-
-void InitialiseScreen() {
-}
