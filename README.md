@@ -3,7 +3,7 @@
 ## License
 
 This project is released under the [GNU GPL v3.0](LICENSE).  
-© 2025 Mazur. No warranty; use at your own risk.
+© 2025 Mazur888. No warranty; use at your own risk.
 
 # F1 Info display on 2.9" 3 color E-Paper
   
