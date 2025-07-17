@@ -1,3 +1,5 @@
+##  Like this project? [Buy me a coffee](coff.ee/mazur888)  
+
 ## Printer:  
 I used Creality K1C  
 hyper pla, no supports default speed and layer settings in creality print.  
@@ -15,7 +17,7 @@ this will give you standard USB A to USB C option only, C to C wont work.
 and solder resistors between CC1 and GND, and CC2 and GND to enable power when used C to C cables. 
 
 ## Assembly:  
-#1 place screen in fron frame and melt corner pins to hold screen in place,  
+#1 place screen in to front frame and using soldering iron melt corner pins to hold screen in place,  
 #2 fish usb connector cable from bottom compartment through back plate into screen and solder wires,  
 #3 close back cover and place front in base,  
 4# secure front using small screw through bottom compartment,  
