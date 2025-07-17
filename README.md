@@ -5,7 +5,7 @@
 This project is released under the [GNU GPL v3.0](LICENSE).  
 © 2025 Mazur888. No warranty; use at your own risk.
 
-# F1 Info display on 2.9" 3 color E-Paper
+# Formula 1 Info tracker on 2.9" 3 color E-Paper
   
   
 ## Formula 1 info screen, based on esp32 and **2.9"  3 color E-Paper module from weact studio**.  
