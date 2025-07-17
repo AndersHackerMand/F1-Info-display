@@ -1,3 +1,8 @@
+##  Like this project? [Buy me a coffee](coff.ee/mazur888)  
+# My Project
+
+Welcome to my project! Check out my website: [Mazur’s Electronics Blog](https://example.com)
+
 ## License
 
 This project is released under the [GNU GPL v3.0](LICENSE).  
