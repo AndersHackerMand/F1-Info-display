@@ -228,7 +228,7 @@ void setup() {
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.setCustomHeadElement(
     "<style>"
-    "body { background: repeating-linear-gradient(45deg, #819A91 0px, #D1D8BE 8px, #D1D8BE 8px, #EEEFE0 16px), linear-gradient(135deg, #DDDDDD, #E1EEBC); color: #F1F1F1; font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }"
+    "body { background: repeating-linear-gradient(45deg, #ffffff 0px, #ffffff 8px, #ffffff 8px, #ffffff 16px), linear-gradient(135deg, #DDDDDD, #E1EEBC); color: #F1F1F1; font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }"
     "h1, h2, h3, h4, h5, h6 { color: #6e0907; text-transform: uppercase; letter-spacing: 1px; }"
     ".container { background: rgba(0, 0, 0, 0.85); padding: 30px; border: 3px solid #E10600; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.7); max-width: 420px; width: 100%; }"
     "input[type=\"text\"], input[type=\"password\"], select { width: calc(100% - 20px); padding: 12px; margin: 10px 0; border-radius: 4px; border: 2px solid #444; background: #111; color: #EEE; font-size: 1em; font-family: inherit; transition: border-color 0.2s; }"
