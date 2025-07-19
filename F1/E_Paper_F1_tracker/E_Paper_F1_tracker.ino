@@ -167,6 +167,41 @@ String utf8_substr(const String& s, int codepoints) {
 }
 //#########################################################################################
 
+void handleOTAUpload() {
+  HTTPUpload& upload = server.upload();
+  if (upload.status == UPLOAD_FILE_START) {
+    preferences.begin("ota", false);
+    preferences.putString("lastFirmware", upload.filename);
+    preferences.end();
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+      Update.printError(Serial);
+      server.send(500, "text/plain", "Update failed to start.");
+      return;
+    }
+  } else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+      Update.printError(Serial);
+      server.send(500, "text/plain", "Update failed to write data.");
+      return;
+    }
+  } else if (upload.status == UPLOAD_FILE_END) {
+    if (Update.end(true)) {
+      server.sendHeader("Connection", "close");
+      server.sendHeader("Content-Length", "0");
+      server.send(200, "text/plain", "Update successful. Rebooting...");
+      delay(1000);
+      ESP.restart();
+    } else {
+      Update.printError(Serial);
+      server.send(500, "text/plain", "Update failed to finalize.");
+    }
+  } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    Update.abort();
+    server.send(500, "text/plain", "Update aborted.");
+  }
+}
+//#########################################################################################
+
 void setup() {
   Serial.begin(115200);
 
@@ -248,11 +283,20 @@ void setup() {
   API_CONSTR_STAND = API_BASE + "/constructorstandings/";
 
   server.on("/", HTTP_GET, handleOTAUpdatePage);
-  server.on(
-    "/", HTTP_POST, []() {}, handleOTAUpload);
   server.on("/api", HTTP_GET, handleF1Page);
-
-  server.begin();
+////////////////////////////////////////////////////////
+  server.on("/update", HTTP_POST,
+    // request handler (runs after upload completes)
+    [](){
+      server.sendHeader("Connection", "close");
+      server.send(200, "text/plain", "Update successful, rebooting");
+      delay(1000);
+      ESP.restart();
+    },
+    // upload handler (called as chunks arrive)
+    handleOTAUpload
+  );
+///////////////////////////////////////////////////////
 
   Serial.println("\nWi‑Fi connected, IP=" + WiFi.localIP().toString());
   display.display(false);
@@ -624,37 +668,4 @@ bool httpGetJson(const char* url) {
 }
 //#########################################################################################
 
-void handleOTAUpload() {
-  HTTPUpload& upload = server.upload();
-  if (upload.status == UPLOAD_FILE_START) {
-    preferences.begin("ota", false);
-    preferences.putString("lastFirmware", upload.filename);
-    preferences.end();
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
-      Update.printError(Serial);
-      server.send(500, "text/plain", "Update failed to start.");
-      return;
-    }
-  } else if (upload.status == UPLOAD_FILE_WRITE) {
-    if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-      Update.printError(Serial);
-      server.send(500, "text/plain", "Update failed to write data.");
-      return;
-    }
-  } else if (upload.status == UPLOAD_FILE_END) {
-    if (Update.end(true)) {
-      server.sendHeader("Connection", "close");
-      server.sendHeader("Content-Length", "0");
-      server.send(200, "text/plain", "Update successful. Rebooting...");
-      delay(1000);
-      ESP.restart();
-    } else {
-      Update.printError(Serial);
-      server.send(500, "text/plain", "Update failed to finalize.");
-    }
-  } else if (upload.status == UPLOAD_FILE_ABORTED) {
-    Update.abort();
-    server.send(500, "text/plain", "Update aborted.");
-  }
-}
-//#########################################################################################
+
