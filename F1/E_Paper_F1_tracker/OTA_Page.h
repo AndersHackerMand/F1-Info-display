@@ -8,9 +8,6 @@ extern Preferences  preferences;
 void handleOTAUpdatePage() {
       Serial.println("HTTP GET /  OTA page");
 
-    preferences.begin("ota", true);
-  String lastFw = preferences.getString("Last File Uploaded: ", "N/A Upload by Arduino IDE");
-  preferences.end();
   String html = R"rawliteral(
 
 <!DOCTYPE html>
@@ -19,181 +16,149 @@ void handleOTAUpdatePage() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.8">
     <title>OTA Update</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 40px 20px;
-            background-color: #f0f2f5; 
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+ <style>
+  :root {
+    --f1-red:       #e10600;
+    --asphalt:      #121212;
+    --rubber:       #1a1a1a;
+    --tread:        #2e2e2e;
+    --text-light:   #f1f1f1;
+    --text-muted:   #999999;
+    --accent-yellow:#ffd700;
+    --border-radius:6px;
+  }
 
-        h1 {
-            color: #2c3e50; 
-            margin-bottom: 30px;
-            font-size: 2.2em;
-        }
+  * {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+  }
 
-        .container {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 600px;
-            box-sizing: border-box;
-        }
+  body {
+    font-family: 'Orbitron', sans-serif;
+    background: var(--asphalt);
+    color: var(--text-light);
+    text-align: center;
+    padding: 2rem 1rem;
+  }
 
-        #drop-area {
-            border: 3px dashed #a0aec0; 
-            background-color: #f7fafc; 
-            padding: 60px 30px;
-            margin: 30px auto;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 150px;
-        }
+  header h1 {
+    font-size: 2.5rem;
+    letter-spacing: 4px;
+    margin-bottom: 2rem;
+    background:
+      linear-gradient(45deg, var(--accent-yellow) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--accent-yellow) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--accent-yellow) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--accent-yellow) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
 
-        #drop-area.highlight {
-            border-color: #4CAF50; 
-            background-color: #e6ffe6; 
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
-        }
+  .container {
+    max-width: 600px;
+    margin: auto;
+    background: var(--rubber);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+  }
 
-        #drop-area p {
-            margin: 0;
-            font-size: 1.1em;
-            color: #666;
-            margin-top: 15px; 
-        }
+  #drop-area {
+    background: var(--tread);
+    border: 3px dashed var(--text-muted);
+    padding: 3rem 1rem;
+    border-radius: var(--border-radius);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  #drop-area.highlight {
+    border-color: var(--accent-yellow);
+    background: #333;
+  }
+  #drop-area p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  #drop-area svg {
+    width: 60px;
+    height: 60px;
+    fill: var(--text-muted);
+  }
+  #drop-area.highlight svg {
+    fill: var(--accent-yellow);
+  }
 
-        #drop-area svg {
-            width: 50px;
-            height: 50px;
-            fill: #a0aec0;
-            transition: fill 0.3s ease;
-        }
+  .button-group {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+  button {
+    background: var(--f1-red);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+  }
+  button:disabled {
+    background: #555;
+    cursor: not-allowed;
+  }
 
-        #drop-area.highlight svg {
-            fill: #4CAF50;
-        }
+  /* Progress bar */
+  #progress-bar {
+    margin: 2rem 0 1rem;
+    background: #333;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
+  }
+  #progress {
+    height: 1.5rem;
+    width: 0%;
+    background: var(--accent-yellow);
+    transition: width 0.3s ease;
+  }
 
-        .button-group {
-            display: inline;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 30px;
-        }
-          .back-button-group {
-            display: flex;
-            flex-direction: vertical;
-            gap: 15px;
-            margin-top: 10px;
-        }
+  #status {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 1rem;
+  }
 
-        button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+  h4 {
+    margin-top: 2rem;
+    font-size: 1.1rem;
+    color: var(--text-light);
+  }
 
-        #uploadButton {
-            background-color: #007bff; /*
-            color: white;
-        }
+  hr {
+    border: none;
+    height: 1px;
+    margin: 2rem 0;
+    background: linear-gradient(to right,
+      transparent, var(--text-muted), transparent);
+  }
+</style>
 
-        #uploadButton:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-        }
-
-        #uploadButton:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        .go-back-button {
-      background: #007bff;
-      color: #ffffff;
-      border: none;
-      padding: 12px;
-      display: inline;
-      width: 100%;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 2px 10px var(--glow-color);
-      transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .go-back-button:hover {
-               transform: scale(1.03);
-      box-shadow: 0 4px 15px var(--glow-color);
-        }
-
-        #progress-bar {
-            width: 100%;
-            background-color: #e9ecef; 
-            border-radius: 5px;
-            margin: 25px auto 15px;
-            overflow: hidden;
-            height: 25px;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        #progress {
-            width: 0%;
-            height: 100%;
-            background-color: #28a745; 
-            border-radius: 5px;
-            text-align: center;
-            line-height: 25px;
-            color: white;
-            transition: width 0.3s ease;
-        }
-
-        #status {
-            margin-top: 15px;
-            font-size: 1em;
-            color: #555;
-            min-height: 20px; 
-        }
-
-        h4 {
-            color: #2c3e50;
-            margin-top: 40px;
-            font-size: 1.1em;
-        }
-
-        hr {
-            border: 0;
-            height: 1px;
-            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0));
-            width: 80%;
-            margin: 40px auto;
-        }
-    </style>
 </head>
 <body>
     <h1>F1 Tracker OTA</h1>
-   <p><strong>Current firmware:</strong> )rawliteral"
-      + lastFw +
-    R"rawliteral(</p>
+
     <div class="container">
         <div id='drop-area'>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2ZM18 20H6V4H13V9H18V20ZM12 11C10.3431 11 9 12.3431 9 14C9 15.6569 10.3431 17 12 17C13.6569 17 15 15.6569 15 14C15 12.3431 13.6569 11 12 11ZM12 13C12.5523 13 13 13.4477 13 14C13 14.5523 12.5523 15 12 15C11.4477 15 11 14.5523 11 14C11 13.4477 11.4477 13 12 13ZM12 18C9.23858 18 7 15.7614 7 13C7 10.2386 9.23858 8 12 8C14.7614 8 17 10.2386 17 13C17 15.7614 14.7614 18 12 18Z"></path></svg>
