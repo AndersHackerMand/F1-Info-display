@@ -9,22 +9,31 @@ This project is released under the [GNU GPL v3.0](LICENSE).
   
   
 ## Formula 1 info screen, based on esp32 and **2.9"  3 color E-Paper module from weact studio**.  
-Data is fetched from **ergast** API and displayed on the screen every 30 minutes.  
-  
-  
-  
-![main1](https://github.com/user-attachments/assets/bd2d88d6-c71a-4726-ab1c-6443115e69ff)  
-  
-**WiFi AP:**  
-SSID "F1 display"  
-PASS "formula1"  
 
-**Displayed Data:**  
+  
+## Featuring:
+#1 mDNS option (**f1tracker.local**), or use just device IP address,  
+#2 Data is fetched from **ergast** API and displayed on the screen every 30 minutes,  
+#3 OTA Upload,  
+#3 Full online dashboard including season calendar, all season rounds, pole positions, driver points etc..   
+
+**Displayed Data on E-paper:**  
 Top 5 Teams for constructors points,  
 Top 10 drivers, including season points,    
 Last race location including podium places,  
 Next race location and date,   
 Pole position for next race.  
+
+**3D printed enclosure and USB Port:**  
+Any printer will be ok, I used Creality K1C and hyper pla, all settings default in creality print, no supports.  
+
+![main1](https://github.com/user-attachments/assets/bd2d88d6-c71a-4726-ab1c-6443115e69ff)  
+![Dash 1](https://github.com/user-attachments/assets/c9934ac0-f57a-41f1-b868-346afdeda1d2)
+
+  
+**WiFi AP:**  
+SSID "F1 display"  
+PASS "formula1"  
   
 ## Third‑Party Libraries  
 - **GxEPD2** (v1.6.4) by ZinggJM — GPL 3.0  
@@ -33,6 +42,10 @@ Pole position for next race.
 - **ArduinoJson** (v7.4.2) by Benoit Blanchon — MIT  
 
 **Arduino IDE 2.3.6 with esp32 3.2.1**  
+Arduino setup:  
+Board- ESP32 DEV MODULE  
+Partition- Minimal SPIFFS with OTA,  
+The rest is left default.  
 
 **Screeen Connections:**  
 BUSY = 4  
