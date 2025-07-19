@@ -23,7 +23,7 @@ and solder resistors between CC1 and GND, and CC2 and GND to enable power when u
 4# secure front using small screw through bottom compartment,  
 5# use bottom compartment to hide excess cable and close it using bottom cap.    
 
-## Connector I used:  
+## Connector type used:  
 <img width="592" height="473" alt="Screenshot From 2025-07-17 09-56-34" src="https://github.com/user-attachments/assets/05c50ee7-b88c-44f0-b425-a9ab086ed698" />
 
  
