@@ -46,12 +46,6 @@ PASS "formula1"
 - **WiFiManager** (v2.0.17) by tzapu — MIT  
 - **ArduinoJson** (v7.4.2) by Benoit Blanchon — MIT  
 
-**Arduino IDE 2.3.6 with esp32 3.2.1**  
-Arduino setup:  
-Board- ESP32 DEV MODULE  
-Partition- Minimal SPIFFS with OTA,  
-The rest is left default.  
-
 **Screeen Connections:**  
 BUSY = 4  
 CS = 5  
