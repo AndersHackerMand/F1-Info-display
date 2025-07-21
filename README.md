@@ -27,7 +27,12 @@ Pole position for next race.
 **3D printed enclosure and USB Port:**  
 Any printer will be ok, I used Creality K1C and hyper pla, all settings default in creality print, no supports.  
 
+## Screen   
+
 ![main1](https://github.com/user-attachments/assets/bd2d88d6-c71a-4726-ab1c-6443115e69ff)  
+
+## Dashboard     
+
 ![Dash 1](https://github.com/user-attachments/assets/c9934ac0-f57a-41f1-b868-346afdeda1d2)
 
   
