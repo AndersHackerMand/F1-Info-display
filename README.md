@@ -12,20 +12,20 @@ Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from
   
 **Features:**  
   
-#1 mDNS option (**f1tracker.local**), or device IP address for dashboard or OTA  
-#2 Data is fetched from **ergast** API and displayed on the screen every 30 minutes,  
-#3 OTA Uploads  
-#3 Full online dashboard including season calendar, all season rounds, pole positions, driver points etc.. 
-#4 Automatic winter/summer time change  
-#5 wifi AP mode for fast wifi setup  
+- mDNS option (**f1tracker.local**), or device IP address for dashboard or OTA  
+- Data is fetched from **ergast** API and displayed on the screen every 30 minutes,  
+- OTA Uploads  
+- Full online dashboard including season calendar, all season rounds, pole positions, driver points etc..  
+- Automatic winter/summer time change  
+- wifi AP mode for fast wifi setup  
     
 **Default data on E-paper:**  
   
-Top 5 Teams including constructors points for current season   
-Top 10 drivers including season points   
-Last race location including podium places   
-Next race location and date  
-Pole position for next race  
+- Top 5 Teams including constructors points for current season   
+- Top 10 drivers including season points   
+- Last race location including podium places   
+- Next race location and date  
+- Pole position for next race  
   
 ##  Like this project? [Buy me a coffee](coff.ee/mazur888)  
   
@@ -44,11 +44,11 @@ MOSI = 23
   
 ## **Software:**
 **WiFI access point login details:**  
-SSID "F1 display"  
-PASS "formula1"  
+- SSID "F1 display"  
+- PASS "formula1"  
   
 **Time zones:**  
-Change time zone to match your location. default time zone is BST for United Kingdom  
+- Change time zone to match your location. default time zone is BST for United Kingdom  
   
 MET-1METDST,M3.5.0/01,M10.5.0/02   //Europe  
 CET-1CEST,M3.5.0,M10.5.0/3         // Central Europe  
@@ -61,10 +61,10 @@ EET-2EEST,M3.5.5/0,M10.5.5/0     // Asia
 ACST-9:30ACDT,M10.1.0,M4.1.0/3   // Australia  
   
 **API Updates:**  
-Screen and dashboard updates are pulled from server every 30 minutes
+- Screen and dashboard updates are pulled from server every 30 minutes
   
 **Software Updates:**  
-If you wish to update the software, OTA server is available under devices IP or f1tracker.local
+- If you wish to update the software, OTA server is available under devices IP or f1tracker.local
   
 ## **Third‑Party Libraries**  
 - **GxEPD2** (v1.6.4) by ZinggJM — GPL 3.0  
@@ -73,7 +73,7 @@ If you wish to update the software, OTA server is available under devices IP or 
 - **ArduinoJson** (v7.4.2) by Benoit Blanchon — MIT
 
 ## Enclosure
-STL Files are included in this project  
+- STL Files are included in this project  
   
 **Printer:**  
 Any printer will be ok, For this project I used Creality K1C and hyper pla  
