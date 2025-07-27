@@ -267,44 +267,91 @@ void DrawTime() {
 }
 //#########################################################################################
 
+static time_t timegm_utc(struct tm* tm) {
+  int year  = tm->tm_year + 1900;
+  int month = tm->tm_mon + 1;   // tm_mon is 0‑11
+
+  // move Jan/Feb to end of previous year  
+  if (month <= 2) {
+    year  -= 1;
+    month += 12;
+  }
+
+  // days since 1970‑01‑01:
+  // 365*y + leap days + days by month + day of month - offset
+  int64_t days = 365LL * year
+               + year/4   - year/100 + year/400
+               + (153*(month-3) + 2)/5
+               + tm->tm_mday
+               - 719469;   // 1970‑01‑01 is day number 719469 since year 0
+
+  return days * 86400
+       + tm->tm_hour * 3600
+       + tm->tm_min  * 60
+       + tm->tm_sec;
+}
+//#########################################################################################
+
 void FetchCalendar() {
+  lastRound = nextRound = 0;
 
-  lastRound = 0;
-  nextRound = 0;
+  if (!httpGetJson(API_RACES.c_str())) return;
 
-  if (httpGetJson(API_RACES.c_str())) {
+  JsonArray races = doc["MRData"]["RaceTable"]["Races"].as<JsonArray>();
+  time_t now = time(nullptr);
 
-    JsonArray races = doc["MRData"]["RaceTable"]["Races"].as<JsonArray>();
+  for (JsonObject race : races) {
+    // 1) read API fields
+    const char* dateStr = race["date"].as<const char*>();  // "2025-07-19"
+    const char* timeStr = race["time"].as<const char*>();  // "14:00:00Z"
+    unsigned   rnd     = race["round"].as<unsigned>();
+    String     circuit = race["Circuit"]["circuitName"].as<const char*>();
+    String     GPname  = race["raceName"].as<const char*>();
+    String     loc     = String(race["Circuit"]["Location"]["locality"].as<const char*>())
+                        + ", " + race["Circuit"]["Location"]["country"].as<const char*>();
 
-    String today = strDateUSA;  // must be YYYY-MM-DD format to fetch dtaa
+    // 2) parse into tm (UTC)
+    struct tm tmRace = {};
+    // parse date
+    if (sscanf(dateStr, "%4d-%2d-%2d",
+               &tmRace.tm_year, &tmRace.tm_mon, &tmRace.tm_mday) != 3) continue;
+    tmRace.tm_year -= 1900;
+    tmRace.tm_mon  -= 1;
+    // parse time (drop trailing 'Z')
+    int h,m,s;
+    if (sscanf(timeStr, "%2d:%2d:%2d", &h, &m, &s) != 3) continue;
+    tmRace.tm_hour = h;
+    tmRace.tm_min  = m;
+    tmRace.tm_sec  = s;
+    tmRace.tm_isdst = 0;
 
-    for (JsonObject race : races) {
-      String date = race["date"].as<const char*>();
-      unsigned rnd = race["round"].as<unsigned>();
-      String circuit = race["Circuit"]["circuitName"].as<const char*>();
-      String GPname = race["raceName"].as<const char*>();
-      String loc = String(race["Circuit"]["Location"]["locality"].as<const char*>())
-                   + ", " + race["Circuit"]["Location"]["country"].as<const char*>();
+    // 3) convert to epoch (UTC)
+    time_t raceEpoch = timegm_utc(&tmRace);
 
-      if (date < today) {
-        if (rnd > lastRound) {
-          lastRound = rnd;
-          lastDate = date;
-          lastName = race["raceName"].as<const char*>();
-          lastCircuit = circuit;
-          lastLoc = loc;
-          lastGP = GPname;
-          lastGP.replace("Grand Prix", "GP");
-        }
-      } else if (nextRound == 0) {
-        nextRound = rnd;
-        nextDate = date;
-        nextName = race["raceName"].as<const char*>();
-        nextCircuit = circuit;
-        nextLoc = loc;
-        nextGP = GPname;
-        nextGP.replace("Grand Prix", "GP");
+    // 4) decide past vs future
+    if (raceEpoch < now) {
+      // this race is over
+      if (rnd > lastRound) {
+        lastRound   = rnd;
+        lastDate    = dateStr;
+        lastTime    = timeStr;
+        lastName    = GPname;
+        lastCircuit = circuit;
+        lastLoc     = loc;
+        lastGP      = GPname;
+        lastGP.replace("Grand Prix","GP");
       }
+    }
+    else if (nextRound == 0) {
+      // first future race
+      nextRound   = rnd;
+      nextDate    = dateStr;
+      nextTime    = timeStr;
+      nextName    = GPname;
+      nextCircuit = circuit;
+      nextLoc     = loc;
+      nextGP      = GPname;
+      nextGP.replace("Grand Prix","GP");
     }
   }
 }
