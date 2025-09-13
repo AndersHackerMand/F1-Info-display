@@ -591,7 +591,7 @@ void setup() {
   display.init();
   display.setRotation(3);
   gfx.begin(display);
-  gfx.setFontMode(1);
+  gfx.setFontMode(0); //fix for text ghosting
   gfx.setFontDirection(0);
   gfx.setForegroundColor(GxEPD_BLACK);
   gfx.setBackgroundColor(GxEPD_WHITE);
