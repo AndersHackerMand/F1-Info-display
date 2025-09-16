@@ -31,7 +31,9 @@ Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from
 - Next race location and date  
 - Pole position for next race  
   
-##  Like this project? [Buy me a coffee](coff.ee/mazur888)  
+<p align="center">
+<a href="https://www.buymeacoffee.com/mazur888" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="35" width="auto"></a>
+</p>
   
 ## **Hardware:**  
 E-Paper module: [2.9 Inch 3-color weact studio e-paper module](https://www.aliexpress.com/item/1005005183232092.html?spm=a2g0o.productlist.main.2.d29e43e0C0sZmD&algo_pvid=ab08f407-4a25-4efe-bcc8-adf1ec59051f&algo_exp_id=ab08f407-4a25-4efe-bcc8-adf1ec59051f-1&pdp_ext_f=%7B%22order%22%3A%22740%22%2C%22eval%22%3A%221%22%7D&pdp_npi=4%40dis%21GBP%2126.76%217.09%21%21%21251.74%2166.72%21%40211b813b17533132046734689e8b5e%2112000032024103612%21sea%21UK%210%21ABX&curPageLogUid=xo1fotgOXa89&utparam-url=scene%3Asearch%7Cquery_from%3A)  
@@ -87,8 +89,7 @@ printed with no supports
 ## License
 This project is released under the [GNU GPL v3.0](LICENSE).  
 © 2025 Mazur888. No warranty; use at your own risk.
-  
-##  Like this project? [Buy me a coffee](coff.ee/mazur888)  
+
   
 <p align="center">
 <a href="https://www.buymeacoffee.com/mazur888" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="35" width="auto"></a>
