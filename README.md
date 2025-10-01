@@ -3,14 +3,6 @@
   
 ![main1](https://github.com/user-attachments/assets/bd2d88d6-c71a-4726-ab1c-6443115e69ff) 
 
-## Pole Position before race:  
-
-![pole](https://github.com/user-attachments/assets/883670d9-ccd7-417a-98e4-c7f5ccae7eb7)
-
-## Dashboard     
-  
-![Dash 1](https://github.com/user-attachments/assets/c9934ac0-f57a-41f1-b868-346afdeda1d2)
-   
 ## About this project  
 Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from weact studio** and ergast API, It allows to track Formula 1 events, dates, points, stats and many more on e-paper display and weserver dashboard.  
   
