@@ -30,7 +30,8 @@ Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from
 - Last race location including podium places   
 - Next race location and date  
 - Pole position for next race  
-  
+
+** Buy the original creator a coffee **
 <p align="center">
 <a href="https://www.buymeacoffee.com/mazur888" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="35" width="auto"></a>
 </p>
