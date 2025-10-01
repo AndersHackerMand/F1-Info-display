@@ -60,7 +60,7 @@ GPIO 23 = MOSI/SDA
 - PASS "formula1"  
   
 **Time zones:**  
-- Change time zone to match your location. default time zone is BST for United Kingdom  
+- Change time zone to match your location. default time zone is for Europe  
   
 MET-1METDST,M3.5.0/01,M10.5.0/02   //Europe  
 CET-1CEST,M3.5.0,M10.5.0/3         // Central Europe  
