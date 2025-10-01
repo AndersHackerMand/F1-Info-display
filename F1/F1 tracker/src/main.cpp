@@ -70,6 +70,7 @@ String API_RACES;
 String API_RESULTS;
 String API_DRIVER_STAND;
 String API_CONSTR_STAND;
+String lastTime = "";   // stores the last calendar time string shown
 
 #define SCREEN_WIDTH 296
 #define SCREEN_HEIGHT 128
@@ -118,9 +119,12 @@ String lastDate, lastName, lastCircuit, lastLoc;
 String nextDate, nextName, nextCircuit, nextLoc;
 String lastGP, nextGP;
 String nextTime; //countdown string
+// Local-time strings for next race & qualifying (derived from UTC in schedule)
+String nextRaceLocal;
+String nextQualiLocal;
 //#########################################################################################
 
-#define MY_TZ "GMT0BST,M3.5.0/1,M10.5.0/2"  // Change time zone if you are outside UK
+#define MY_TZ "CET-1CEST,M3.5.0,M10.5.0/3"  // Change time zone if you are outside UK
 #define NTP1 "pool.ntp.org"
 #define NTP2 "time.nist.gov"
 
@@ -290,6 +294,59 @@ static time_t timegm_utc(struct tm* tm) {
        + tm->tm_min  * 60
        + tm->tm_sec;
 }
+// Format "YYYY-MM-DD" + "HH:MM:SSZ" (UTC) into local time, e.g. "Sun 12 Oct 15:00"
+static String formatLocalFromUtc(const char* dateStr, const char* timeStr) {
+  if (!dateStr || !timeStr) return "";
+
+  // Parse date
+  int Y=0,M=0,D=0, h=0,m=0,s=0;
+  if (sscanf(dateStr, "%4d-%2d-%2d", &Y,&M,&D) != 3) return "";
+  // Parse time (ignore trailing 'Z')
+  if (sscanf(timeStr, "%2d:%2d:%2d", &h,&m,&s) != 3) return "";
+
+  struct tm tm_utc = {};
+  tm_utc.tm_year = Y - 1900;
+  tm_utc.tm_mon  = M - 1;
+  tm_utc.tm_mday = D;
+  tm_utc.tm_hour = h;
+  tm_utc.tm_min  = m;
+  tm_utc.tm_sec  = s;
+  tm_utc.tm_isdst = 0;
+
+  time_t epoch_utc = timegm_utc(&tm_utc);
+  struct tm loc;
+  localtime_r(&epoch_utc, &loc);               // apply MY_TZ (set in setup)
+
+  char out[32];
+  // Full: "Sun 12 Oct 15:00"
+  strftime(out, sizeof(out), "%a %d %b %H:%M", &loc);
+  return String(out);
+}
+// Format to "dd-mm HH:MM"
+static String formatCompactLocal(const char* dateStr, const char* timeStr) {
+  if (!dateStr || !timeStr) return "";
+
+  int Y=0,M=0,D=0,h=0,m=0,s=0;
+  if (sscanf(dateStr, "%4d-%2d-%2d", &Y,&M,&D) != 3) return "";
+  if (sscanf(timeStr, "%2d:%2d:%2d", &h,&m,&s) != 3) return "";
+
+  struct tm tm_utc = {};
+  tm_utc.tm_year = Y - 1900;
+  tm_utc.tm_mon  = M - 1;
+  tm_utc.tm_mday = D;
+  tm_utc.tm_hour = h;
+  tm_utc.tm_min  = m;
+  tm_utc.tm_sec  = s;
+
+  time_t epoch_utc = timegm_utc(&tm_utc);
+  struct tm loc;
+  localtime_r(&epoch_utc, &loc);
+
+  char out[32];
+  strftime(out, sizeof(out), "%d-%m %H:%M", &loc);
+  return String(out);
+}
+
 //#########################################################################################
 
 void FetchCalendar() {
@@ -352,6 +409,17 @@ void FetchCalendar() {
       nextLoc     = loc;
       nextGP      = GPname;
       nextGP.replace("Grand Prix","GP");
+
+      // Build local-time strings for display
+      nextRaceLocal  = formatCompactLocal(nextDate.c_str(), nextTime.c_str());
+
+      const char* qDate = race["Qualifying"]["date"].as<const char*>();
+      const char* qTime = race["Qualifying"]["time"].as<const char*>();
+      if (qDate && qTime) {
+        nextQualiLocal = formatCompactLocal(qDate, qTime);
+      } else {
+        nextQualiLocal = "";
+      }
     }
   }
 }
@@ -473,12 +541,22 @@ void DrawNextRace() {
   String month = iso.substring(p1 + 1, p2);  // month
   String day = iso.substring(p2 + 1);        // day
 
-  String displayDate = day + "-" + month + "-" + year;  // dd-mm-yyyy
-  String nextInfo = "Next: " + nextGP + ", " + displayDate;
+String displayDate = day + "-" + month + "-" + year;  // dd-mm-yyyy
 
-  gfx.setForegroundColor(GxEPD_BLACK);
-  gfx.setFont(u8g2_font_helvB08_tf);
-  drawString(0, 14, nextInfo.c_str(), LEFT);
+// If we have a local race start time, show it right after the date
+String nextInfo = "Next: " + nextGP;
+if (nextRaceLocal.length()) {
+  nextInfo += ", " + nextRaceLocal;  // e.g. "05/10 14:00"
+}
+
+gfx.setForegroundColor(GxEPD_BLACK);
+gfx.setFont(u8g2_font_helvB08_tf);
+drawString(0, 14, nextInfo.c_str(), LEFT);
+
+// Show quali one line below if available
+if (nextQualiLocal.length()) {
+  drawString(0, 34, String("Quali: " + nextQualiLocal), LEFT);
+}
 }
 //#########################################################################################
 
