@@ -60,7 +60,9 @@ MST7MDT,M4.1.0,M10.5.0           // MST USA
 NZST-12NZDT,M9.5.0,M4.1.0/3      // Auckland  
 EET-2EEST,M3.5.5/0,M10.5.5/0     // Asia  
 ACST-9:30ACDT,M10.1.0,M4.1.0/3   // Australia  
-  
+
+## Printing and assembly
+
 **API Updates:**  
 - Screen and dashboard updates are pulled from server every 30 minutes
 
@@ -70,13 +72,6 @@ ACST-9:30ACDT,M10.1.0,M4.1.0/3   // Australia
 - **WiFiManager** (v2.0.17) by tzapu — MIT  
 - **ArduinoJson** (v7.4.2) by Benoit Blanchon — MIT
 
-## Enclosure
-- STL Files are included in this project  
-  
-**Printer:**  
-Any printer will be ok, For this project I used Creality K1C and hyper pla  
-all settings default in creality print  
-printed with no supports  
   
 ## License
 This project is released under the [GNU GPL v3.0](LICENSE).  
