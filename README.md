@@ -8,10 +8,7 @@ Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from
   
 **Features:**  
   
-- mDNS option (**f1tracker.local**), or device IP address for dashboard or OTA  
 - Data is fetched from **ergast** API and displayed on the screen every 30 minutes,  
-- OTA Uploads  
-- Full online dashboard including season calendar, all season rounds, pole positions, driver points etc..  
 - Automatic winter/summer time change  
 - wifi AP mode for fast wifi setup  
     
@@ -20,7 +17,7 @@ Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from
 - Top 5 Teams including constructors points for current season   
 - Top 10 drivers including season points   
 - Last race location including podium places   
-- Next race location and date  
+- Next race location, date and time  
 - Pole position for next race  
 
 **Buy the original creator a coffee**
