@@ -46,7 +46,6 @@ CS = 5
 RST = 16  
 DC = 17  
 SCK = 18  
-MISO = 19  
 MOSI = 23  
   
 ## **Software:**
