@@ -48,11 +48,11 @@ ESP32: [ESP32 dev board](https://www.aliexpress.com/item/1005010047681414.html?s
 
 **ESP32 to Screen Connections:**  
 GPIO 4 = BUSY  
-GPIO 16 / RX2 = RST 
-GPIO 17 / TX2 = DC 
-GPIO 5 = CS
-GPIO 18  = SCK/SCL
-GPIO 23 = MOSI/SDA
+GPIO 16 / RX2 = RST  
+GPIO 17 / TX2 = DC  
+GPIO 5 = CS  
+GPIO 18  = SCK/SCL  
+GPIO 23 = MOSI/SDA  
 
 ## **Software:**
 **WiFI access point login details:**  
