@@ -1,8 +1,7 @@
 # Formula 1 Info tracker  
 ![mounted2](F1/pictures/mounted2.jpg)
 ![mounted1](F1/pictures/mounted1.jpg)
-## About this project  
-This is a fork of an awesome project by Mazur888 
+## This is a fork of an awesome project by Mazur888 
 ### Changes made to this version
 - Added time of race start and qualifying date and time
 - Removed the dashboard website for lower power use 
@@ -20,7 +19,6 @@ Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from
   
 - Top 5 Teams including constructors points for current season   
 - Top 10 drivers including season points   
-- Last race location including podium places   
 - Next race location, date and time  
 - Pole position for next race  
 
@@ -44,6 +42,15 @@ GPIO 18  = SCK/SCL
 GPIO 23 = MOSI/SDA  
 
 ## **Software:**
+
+### Using PlatformIO to flash the ESP
+1. Clone the repo and open the folder in VS Code.
+2. Create a new project in PlatformIO
+3. Replace the [platformio.ini] with the one from this repo
+4. Put the repo’s F1 sources under src/ (or point PlatformIO to them)
+5. optionally change the time zone under main.cpp (timezones can be seen below)
+6. Then build and upload
+
 **WiFI access point login details:**  
 - SSID "F1 display"  
 - PASS "formula1"  
@@ -71,10 +78,12 @@ I used Creality Ender 3 v2
 - 2x m3x4 bolts
 
 ## Assembly:  
-1. place screen in to front frame   
-2. place esp on top, the pressure from the soldered wires should hold the screen in place
-3. Screw in ESP using the m3x4 bolt
+1. Place screen in to front frame, it should be slid in from the one side and the flipped into place.   
+2. Place esp on top, the pressure from the soldered wires should hold the screen in place
+3. Screw in ESP using the m3x4 bolt (be careful if screw head to big, this can damage the buttons on the esp (refer to picutre below))
 4. Screw in the 2 hooks with the m3x6 bolts
+Fully assembled from behind:
+![ForSoldering](F1/pictures/AssembledBehind.png)
 
 **API Updates:**  
 - Screen and dashboard updates are pulled from server every 30 minutes
