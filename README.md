@@ -82,6 +82,7 @@ I used Creality Ender 3 v2
 2. Place esp on top, the pressure from the soldered wires should hold the screen in place
 3. Screw in ESP using the m3x4 bolt (be careful if screw head to big, this can damage the buttons on the esp (refer to picutre below))
 4. Screw in the 2 hooks with the m3x6 bolts
+
 Fully assembled from behind:
 ![ForSoldering](F1/pictures/AssembledBehind.png)
 
