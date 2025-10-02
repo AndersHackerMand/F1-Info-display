@@ -1,7 +1,6 @@
 # Formula 1 Info tracker  
-  
-![main1](https://github.com/user-attachments/assets/bd2d88d6-c71a-4726-ab1c-6443115e69ff) 
 ![mounted2](F1/pictures/mounted2.jpg)
+![mounted1](F1/pictures/mounted1.jpg)
 ## About this project  
 Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from weact studio** and ergast API, It allows to track Formula 1 events, dates, points, stats and many more on e-paper display and weserver dashboard.  
   
@@ -28,7 +27,7 @@ ESP32: [ESP32 dev board](https://www.aliexpress.com/item/1005010047681414.html?s
 1. If ESP32 came with soldered on headers they should be desoldered, i recommend following [this tutorial](https://www.instructables.com/How-to-Desolder-Headers/) 
 2. Cut 8 stranded wires to around 10cm
 3. Solder on the underside of both devices like below, the connnections can be seen below
-[IMAGE]
+![ForSoldering](F1/pictures/ForSoldering.jpg)
 
 **ESP32 to Screen Connections:**  
 GPIO 4 = BUSY  
