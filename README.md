@@ -6,6 +6,7 @@ This is a fork of an awesome project by Mazur888
 ### Changes made to this version
 - Added time of race start and qualifying date and time
 - Removed the dashboard website for lower power use 
+- Added case for mount on the Ikea skadis pegboard system
 ### Original about
 Formula 1 info screen, is based on esp32 and **2.9"  3 color E-Paper module from weact studio** and ergast API, It allows to track Formula 1 events, dates, points, stats and many more on e-paper display and weserver dashboard.  
   
