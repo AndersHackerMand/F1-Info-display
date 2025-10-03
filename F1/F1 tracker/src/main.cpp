@@ -58,11 +58,14 @@ mDNS implemented: go to f1tracker.local or device IP
 #include <HTTPClient.h>
 #include "OTA_Page.h"
 #include "Dashboard_Page.h"
-
+#include "esp_wifi.h"   // for esp_wifi_get_config()
 
 #define AP_SSID "F1 tracker"
 #define AP_PASS "formula1"
+#define HTTP_TIMEOUT_MS 6000
 bool wifiConnected = false;
+bool serverStarted = false;      // tracks if we started our own web server
+bool allowDeepSleep = false;     // set true when we want low-power “one-shot then sleep”
 IPAddress ip;
 
 String API_BASE;
@@ -77,6 +80,7 @@ String lastTime = "";   // stores the last calendar time string shown
 #define listx 225
 #define logoWidth 80
 #define logoHeight 20
+
 
 enum screenAlignment { LEFT, RIGHT, CENTER };
 
@@ -131,7 +135,7 @@ String nextQualiLocal;
 WebServer server(80);
 Preferences preferences;
 
-const unsigned long UPDATE_INTERVAL = 30UL * 60UL * 1000UL;  // 30 minutes
+const unsigned long UPDATE_INTERVAL = 60UL * 60UL * 1000UL;  // 60 minutes
 unsigned long lastUpdate = 0;
 
 time_t now;
@@ -294,6 +298,31 @@ static time_t timegm_utc(struct tm* tm) {
        + tm->tm_min  * 60
        + tm->tm_sec;
 }
+
+// Return true if an SSID is stored in NVS for STA
+static bool hasSavedWifiCredentials() {
+  WiFi.mode(WIFI_STA); // make sure Wi-Fi is initialized
+  wifi_config_t conf{};
+  esp_err_t err = esp_wifi_get_config(WIFI_IF_STA, &conf);
+  if (err != ESP_OK) {
+    Serial.printf("esp_wifi_get_config err=%d\n", (int)err);
+    return false;
+  }
+  size_t ssid_len = strnlen((const char*)conf.sta.ssid, sizeof(conf.sta.ssid));
+  size_t pass_len = strnlen((const char*)conf.sta.password, sizeof(conf.sta.password));
+  if (ssid_len) {
+    Serial.printf("Saved SSID found: '%s' (pass %s)\n",
+                  (const char*)conf.sta.ssid,
+                  pass_len ? "present" : "empty");
+  } else {
+    Serial.println("No saved SSID.");
+  }
+  return ssid_len > 0;
+}
+
+
+
+
 // Format "YYYY-MM-DD" + "HH:MM:SSZ" (UTC) into local time, e.g. "Sun 12 Oct 15:00"
 static String formatLocalFromUtc(const char* dateStr, const char* timeStr) {
   if (!dateStr || !timeStr) return "";
@@ -423,6 +452,7 @@ void FetchCalendar() {
     }
   }
 }
+
 //#########################################################################################
 
 void DrawLastRace() {
@@ -661,6 +691,24 @@ void DrawConstructors() {
   }
 }
 //#########################################################################################
+
+static void runUpdateOnce() {
+  // Clear the RAM buffer before drawing the new frame
+  display.fillScreen(GxEPD_WHITE);
+  // display.setFullWindow(); // optional; set once in setup is fine
+
+  if (getLocalTime(&timeinfo)) {
+    DrawTime();
+    FetchCalendar();
+    DrawDrivers();
+    DrawConstructors();
+    DrawLastRace();
+    DrawNextRace();
+    if (nextRound != 0) DrawPolePosition(nextRound);
+    display.display(); // push clean frame to panel
+  }
+}
+//#########################################################################################
 void setup() {
   Serial.begin(115200);
 
@@ -677,12 +725,8 @@ void setup() {
   display.fillScreen(GxEPD_WHITE);
   display.setFullWindow();
 
-  //  splash screen
-  display.fillScreen(GxEPD_WHITE);
-  display.drawBitmap(SCREEN_WIDTH / 2 - logoWidth / 2, 50, F1_Logo, logoWidth, logoHeight, GxEPD_RED);
-  drawString(40, 74, "It's Lights out and away we go!", LEFT);
 
-  // WiFiManager
+  // ---------- Wi-Fi / server: only start AP+server if no saved Wi-Fi ----------
   WiFiManager wifiManager;
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.setCustomHeadElement(
@@ -711,27 +755,87 @@ void setup() {
     "document.body.appendChild(custom);"
     "});"
     "</script>");
-
   wifiManager.setTitle("Formula 1 Tracker");
 
-  if (!wifiManager.autoConnect(AP_SSID, AP_PASS)) {
-    ESP.restart();
-  }
+  bool startServer = false;
 
-  if (!MDNS.begin("f1tracker")) {  
-    Serial.println("Error setting up MDNS responder!");
+  // Try silent STA connect if creds exist
+  WiFi.mode(WIFI_STA);           // ensure Wi-Fi is initialized in STA mode
+  WiFi.persistent(true);         // keep creds in NVS
+  if (hasSavedWifiCredentials()) {
+    Serial.println("Saved Wi-Fi found — connecting silently (no AP, no server)...");
+    WiFi.begin(); // uses stored credentials
+    unsigned long t0 = millis();
+    const unsigned long TIMEOUT = 10000; // 10s
+    while (WiFi.status() != WL_CONNECTED && (millis() - t0) < TIMEOUT) {
+      delay(200);
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+      wifiConnected = true;
+      ip = WiFi.localIP();
+      Serial.println("Connected. IP=" + ip.toString());
+      // keep startServer=false to reduce power
+    } else {
+      Serial.println("Silent connect failed — starting AP for configuration.");
+      if (!wifiManager.autoConnect(AP_SSID, AP_PASS)) {
+        ESP.restart();
+      }
+      wifiConnected = true;
+      ip = WiFi.localIP();
+      startServer = false; // keep our server OFF to save power
+    }
   } else {
-    Serial.println("mDNS responder started: http://f1tracker.local");
-    MDNS.addService("http", "tcp", 80);
+    Serial.println("No saved Wi-Fi — starting AP for configuration.");
+    if (!wifiManager.autoConnect(AP_SSID, AP_PASS)) {
+      ESP.restart();
+    }
+    wifiConnected = true;
+    ip = WiFi.localIP();
+    startServer = false;   // still OFF; WiFiManager’s portal was enough
   }
 
-  wifiConnected = true;
-  ip = WiFi.localIP();
+  // If we decided to run the server (only in config/AP or fallback), start mDNS + routes
+  if (startServer) {
+    if (!MDNS.begin("f1tracker")) {
+      Serial.println("Error setting up mDNS responder!");
+    } else {
+      Serial.println("mDNS responder started: http://f1tracker.local");
+      MDNS.addService("http", "tcp", 80);
+    }
 
+    server.on("/", HTTP_GET, handleOTAUpdatePage);
+    server.on("/api", HTTP_GET, handleF1Page);
+    server.on("/update", HTTP_POST,
+      [](){
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/plain", "Update successful, rebooting");
+        delay(1000);
+        ESP.restart();
+      },
+      handleOTAUpload
+    );
+
+    server.begin();
+    serverStarted = true;          // <— track it
+    allowDeepSleep = false;        // web mode => keep running (no sleep)
+    Serial.println("Web server started.");
+  } else {
+    serverStarted = false;
+    allowDeepSleep = true;         // normal mode => do one-shot + sleep
+    Serial.println("Web server not started (power-save mode).");
+  }
+// Show splash only if we're staying awake (web/config mode)
+if (!allowDeepSleep) {
+  display.fillScreen(GxEPD_WHITE);
+  display.drawBitmap(SCREEN_WIDTH / 2 - logoWidth / 2, 50, F1_Logo, logoWidth, logoHeight, GxEPD_RED);
+  drawString(40, 74, "It's Lights out and away we go!", LEFT);
+  display.display(false);  // full refresh for splash
+}
+
+  // Common post-Wi-Fi init (runs either way)
   configTzTime(MY_TZ, NTP1, NTP2);
-  while (!getLocalTime(&timeinfo)) {
-    delay(1000);
-  }
+  while (!getLocalTime(&timeinfo)) { delay(1000); }
+
   int currentYear = timeinfo.tm_year + 1900; // current season year for API
   API_BASE = "https://api.jolpi.ca/ergast/f1/" + String(currentYear);
   API_RACES = API_BASE + "/races/";
@@ -739,43 +843,49 @@ void setup() {
   API_DRIVER_STAND = API_BASE + "/driverstandings/";
   API_CONSTR_STAND = API_BASE + "/constructorstandings/";
 
-  server.on("/", HTTP_GET, handleOTAUpdatePage);
-  server.on("/api", HTTP_GET, handleF1Page);
-  server.on("/update", HTTP_POST,
-    [](){
-      server.sendHeader("Connection", "close");
-      server.send(200, "text/plain", "Update successful, rebooting");
-      delay(1000);
-      ESP.restart();
-    },
-    handleOTAUpload
-  );
+  Serial.println("\nWi-Fi connected, IP=" + WiFi.localIP().toString());
+  // ---------- Low-power behavior ----------
+if (allowDeepSleep) {
+  Serial.println("Running one-shot update before deep sleep...");
+  runUpdateOnce();
 
-  Serial.println("\nWi‑Fi connected, IP=" + WiFi.localIP().toString());
-  display.display(false);
-  server.begin();
+  // Put the e-paper into low-power mode (GxEPD2)
+  display.hibernate();      // or display.powerOff() on some panels
+
+  // Shut down Wi-Fi cleanly
+  WiFi.disconnect(true);    // true => erase connection state (keeps creds in NVS)
+  WiFi.mode(WIFI_OFF);
+
+  // Sleep for 60 minutes
+  const uint64_t uS_PER_MIN = 60ULL * 1000000ULL;
+  esp_sleep_enable_timer_wakeup(60ULL * uS_PER_MIN);
+  Serial.println("Entering deep sleep for 60 minutes...");
+  delay(100); // let serial flush
+  esp_deep_sleep_start();
+
+  // (never returns)
+}
+
+// ---------- end Wi-Fi / server handling ----------
 
   lastUpdate = millis() - UPDATE_INTERVAL;
 
-  display.fillScreen(GxEPD_WHITE);
 }
 //#########################################################################################
 
 void loop() {
-  server.handleClient();
-  unsigned long now = millis();
-  if (now - lastUpdate >= UPDATE_INTERVAL) {
-    lastUpdate = now;
-    if (getLocalTime(&timeinfo)) {
-      DrawTime();
-      FetchCalendar();
-      DrawDrivers();
-      DrawConstructors();
-      DrawLastRace();
-      DrawNextRace();
-      if (nextRound != 0) DrawPolePosition(nextRound);
-      display.display(); 
+  if (serverStarted) {
+    server.handleClient();   // only when web server is active
+    // (You can keep your periodic refresh here if you want live updates in web mode)
+    unsigned long now = millis();
+    if (now - lastUpdate >= UPDATE_INTERVAL) {
+      lastUpdate = now;
+      runUpdateOnce();
     }
+  } else {
+    // In deep-sleep mode we never reach here (we slept in setup()).
+    // If we do, just idle briefly.
+    delay(1000);
   }
 }
 //#########################################################################################
