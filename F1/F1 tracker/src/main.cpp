@@ -128,7 +128,7 @@ String nextRaceLocal;
 String nextQualiLocal;
 //#########################################################################################
 
-#define MY_TZ "CET-1CEST,M3.5.0,M10.5.0/3"  // Change time zone if you are outside UK
+#define MY_TZ "CET-1CEST,M3.5.0,M10.5.0/3"  // Change time zone if you are outside CET
 #define NTP1 "pool.ntp.org"
 #define NTP2 "time.nist.gov"
 
@@ -546,7 +546,7 @@ void DrawPolePosition(unsigned round) {
                 given.c_str(), family.c_str(),
                 team.c_str());
 
-  String quali = "Pole Pos: " + family + team;
+  String quali = "Pole Pos: "+ given + " " + family;
   drawString(0, 24, quali.c_str(), LEFT);
 }
 
